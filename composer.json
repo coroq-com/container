@@ -1,0 +1,22 @@
+{
+    "name": "coroq/container",
+    "type": "library",
+    "require": {
+        "psr/container": "^2.0"
+    },
+    "license": "MIT",
+    "autoload": {
+        "psr-4": {
+            "Coroq\\Container\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "Ozawa Masayuki",
+            "email": "ozawa@coroq.com"
+        }
+    ],
+    "require-dev": {
+        "phpunit/phpunit": "^8.5"
+    }
+}
