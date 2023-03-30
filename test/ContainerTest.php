@@ -1,40 +1,33 @@
 <?php
 declare(strict_types=1);
-
 use Coroq\Container\Container;
 use Coroq\Container\Entry\EntryInterface;
-use Coroq\Container\Exception\NotFoundException;
 use PHPUnit\Framework\TestCase;
+use Psr\Container\NotFoundExceptionInterface;
 
 class ContainerTest extends TestCase {
-  public function testGetAndSet(): void {
-    $container = new Container();
-    $entryMock = $this->createMock(EntryInterface::class);
-    $entryMock->method('getValue')->willReturn('Hello, world!');
-
-    $container->set('mockEntry', $entryMock);
-
-    $this->assertTrue($container->has('mockEntry'));
-    $this->assertEquals('Hello, world!', $container->get('mockEntry'));
-  }
-
-  public function testGetValueFromEntry(): void {
+  public function testSetAndGetEntry() {
     $container = new Container();
     $entryMock = $this->createMock(EntryInterface::class);
     $entryMock->expects($this->once())
       ->method('getValue')
       ->with($container)
-      ->willReturn('Hello, world!');
-
-    $container->set('mockEntry', $entryMock);
-
-    $this->assertEquals('Hello, world!', $container->get('mockEntry'));
+      ->willReturn('entry_value');
+    $container->set('entry_key', $entryMock);
+    $this->assertEquals('entry_value', $container->get('entry_key'));
   }
 
-  public function testNotFoundException(): void {
+  public function testHasEntry() {
     $container = new Container();
-    $this->assertFalse($container->has('nonexistent'));
-    $this->expectException(NotFoundException::class);
-    $container->get('nonexistent');
+    $entryMock = $this->createMock(EntryInterface::class);
+    $container->set('entry_key', $entryMock);
+    $this->assertTrue($container->has('entry_key'));
+    $this->assertFalse($container->has('non_existent_key'));
+  }
+
+  public function testGetThrowsNotFoundException() {
+    $container = new Container();
+    $this->expectException(NotFoundExceptionInterface::class);
+    $container->get('non_existent_key');
   }
 }

@@ -8,7 +8,10 @@
     "autoload": {
         "psr-4": {
             "Coroq\\Container\\": "src/"
-        }
+        },
+        "files": [
+            "src/shorthands.php"
+        ]
     },
     "authors": [
         {
