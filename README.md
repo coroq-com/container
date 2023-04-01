@@ -33,15 +33,14 @@ composer require coroq/container
 use Coroq\Container\Container;
 use function Coroq\Container\factory;
 use function Coroq\Container\singleton;
-use function Coroq\Container\value;
 
 // Create a container.
 $container = new Container();
 
 // Register some entries.
 
-// Value: The provided value (an array in this case) will be returned as-is when requested.
-$container->set('config', value(['site_name' => 'Container Example']));
+// Normal value.
+$container->set('config', ['site_name' => 'Container Example']);
 
 // Singleton: Only one instance of MyService will be created and reused.
 $container->set('myService', singleton(function($container) {

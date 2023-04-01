@@ -6,7 +6,7 @@ use PHPUnit\Framework\TestCase;
 use Psr\Container\NotFoundExceptionInterface;
 
 class ContainerTest extends TestCase {
-  public function testSetAndGetEntry() {
+  public function testSetAndGetWithEntryInterface() {
     $container = new Container();
     $entryMock = $this->createMock(EntryInterface::class);
     $entryMock->expects($this->once())
@@ -15,6 +15,12 @@ class ContainerTest extends TestCase {
       ->willReturn('entry_value');
     $container->set('entry_key', $entryMock);
     $this->assertEquals('entry_value', $container->get('entry_key'));
+  }
+
+  public function testSetAndGetWithString() {
+    $container = new Container();
+    $container->set('entry_key', 'value');
+    $this->assertEquals('value', $container->get('entry_key'));
   }
 
   public function testHasEntry() {

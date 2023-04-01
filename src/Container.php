@@ -3,6 +3,7 @@ declare(strict_types=1);
 namespace Coroq\Container;
 
 use Coroq\Container\Entry\EntryInterface;
+use Coroq\Container\Entry\Value;
 use Coroq\Container\Exception\NotFoundException;
 use Psr\Container\ContainerInterface;
 
@@ -46,7 +47,18 @@ class Container implements ContainerInterface {
     return isset($this->entries[$id]);
   }
 
-  public function set(string $id, EntryInterface $entry): void {
+  /**
+   * Sets an entry in the container by its identifier.
+   *
+   * @param string $id Identifier of the entry to set.
+   * @param mixed $entry The entry to set.
+   *
+   * @return void
+   */
+   public function set(string $id, $entry): void {
+    if (!($entry instanceof EntryInterface)) {
+      $entry = new Value($entry);
+    }
     $this->entries[$id] = $entry;
   }
 }
