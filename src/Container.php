@@ -61,4 +61,15 @@ class Container implements ContainerInterface {
     }
     $this->entries[$id] = $entry;
   }
+
+  /**
+   * Sets multiple entries at onece
+   * @param array<string, mixed> $entries Associative array of entry identifiers and their values.
+   * @return void
+   */
+  public function setMany(array $entries): void {
+    foreach ($entries as $id => $entry) {
+      $this->set($id, $entry);
+    }
+  }
 }
