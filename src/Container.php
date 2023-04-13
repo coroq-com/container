@@ -5,6 +5,7 @@ namespace Coroq\Container;
 use Coroq\Container\Entry\EntryInterface;
 use Coroq\Container\Entry\Value;
 use Coroq\Container\Exception\NotFoundException;
+use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\ContainerInterface;
 
 class Container implements ContainerInterface {
@@ -20,8 +21,7 @@ class Container implements ContainerInterface {
    *
    * @param string $id Identifier of the entry to look for.
    *
-   * @throws NotFoundExceptionInterface  No entry was found for **this** identifier.
-   * @throws ContainerExceptionInterface Error while retrieving the entry.
+   * @throws NotFoundException  No entry was found for the identifier.
    *
    * @return mixed Entry.
    */

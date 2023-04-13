@@ -15,6 +15,9 @@ function singleton(callable $factory): Singleton {
   return new Singleton($factory);
 }
 
+/**
+ * @param mixed $value
+ */
 function value($value): Value {
   return new Value($value);
 }

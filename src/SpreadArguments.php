@@ -27,6 +27,9 @@ class SpreadArguments {
     }
   }
 
+  /**
+   * @return mixed
+   */
   public function __invoke(ContainerInterface $container) {
     $arguments = [];
     foreach ($this->parameterNames as $parameterName) {
