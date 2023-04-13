@@ -60,6 +60,20 @@ $container->set('myEntity', factory(function($container) {
 $myEntity = $container->get('myEntity');
 ```
 
+### Setting multiple entries at once
+
+```php
+// With the setMany() method, you can quickly add multiple entries to the container.
+$container->setMany([
+  'entry1' => 'value1',
+  'entry2' => 'value2',
+]);
+
+// This is the same as doing:
+$container->set('entry1', 'value1');
+$container->set('entry2', 'value2');
+```
+
 ### Using spread() for concise and IDE-friendly code
 
 If you want to take advantage of your IDE's type hinting feature, you can use the spread() function. This function automatically assigns arguments for the singleton() and factory() functions based on their parameter names.
