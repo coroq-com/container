@@ -8,11 +8,11 @@ use Coroq\Container\Entry\Singleton;
 use Coroq\Container\Entry\Value;
 
 function factory(callable $factory): Factory {
-  return new Factory($factory);
+  return new Factory(new SpreadArguments($factory));
 }
 
 function singleton(callable $factory): Singleton {
-  return new Singleton($factory);
+  return new Singleton(new SpreadArguments($factory));
 }
 
 /**

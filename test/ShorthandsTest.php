@@ -10,19 +10,27 @@ use function Coroq\Container\value;
 
 class ShorthandsTest extends TestCase {
   public function testFactory() {
-    $factory = factory(function() {
-      return 'ok';
+    $factory = factory(function($ok) {
+      return $ok;
     });
     $containerMock = $this->createMock(ContainerInterface::class);
+    $containerMock
+      ->method('get')
+      ->with('ok')
+      ->willReturn('ok');
     $this->assertInstanceOf(\Coroq\Container\Entry\Factory::class, $factory);
     $this->assertEquals('ok', $factory->getValue($containerMock));
   }
 
   public function testSingleton() {
-    $singleton = singleton(function() {
-      return 'ok';
+    $singleton = singleton(function($ok) {
+      return $ok;
     });
     $containerMock = $this->createMock(ContainerInterface::class);
+    $containerMock
+      ->method('get')
+      ->with('ok')
+      ->willReturn('ok');
     $this->assertInstanceOf(\Coroq\Container\Entry\Singleton::class, $singleton);
     $this->assertEquals('ok', $singleton->getValue($containerMock));
   }
