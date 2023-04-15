@@ -2,7 +2,8 @@
     "name": "coroq/container",
     "type": "library",
     "require": {
-        "psr/container": "^2.0"
+        "psr/container": "^2.0",
+        "coroq/callable-reflector": "^1.0"
     },
     "license": "MIT",
     "autoload": {
