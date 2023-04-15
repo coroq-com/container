@@ -39,20 +39,22 @@ $container = new Container();
 
 // Register some entries.
 
-// Normal value.
+// A regular value.
 $container->set('config', ['site_name' => 'Container Example']);
 
-// Singleton: Only one instance of MyService will be created and reused.
-$container->set('myService', singleton(function($container) {
-  $config = $container->get('config');
+// Singleton: Only one instance of MyService is created and reused.
+$container->set('myService', singleton(function($config) {
+  // singleton() provides arguments from container entries that match the parameter name.
+  // So, $config is retrieved from $container->get('config').
   $myService = new MyService();
   $myService->setSiteName($config['site_name']);
   return $myService;
 }));
 
-// Factory: A new instance of MyEntity will be created every time it's requested.
-$container->set('myEntity', factory(function($container) {
-  $myService = $container->get('myService');
+// Factory: A new instance of MyEntity is created every time it's requested.
+$container->set('myEntity', factory(function(MyService $myService) {
+  // You can use type hints for the arguments.
+  // Note that arguments are bound by their names, not their types.
   return new MyEntity($myService);
 }));
 
@@ -74,24 +76,24 @@ $container->set('entry1', 'value1');
 $container->set('entry2', 'value2');
 ```
 
-### Using spread() for concise and IDE-friendly code
+### Alias
 
-If you want to take advantage of your IDE's type hinting feature, you can use the spread() function. This function automatically assigns arguments for the singleton() and factory() functions based on their parameter names.
+Create aliases for a single entry using the alias() function. This allows you to reference the same entry in the container with different identifiers.
 
 ```php
-use function Coroq\Container\spread;
+use function Coroq\Container\alias;
 
-// $config is taken from $container->get('config').
-$container->set('myService', singleton(spread(function(array $config) {
-  $myService = new MyService();
-  $myService->setSiteName($config['site_name']);
-  return $myService;
-})));
+$container->setMany([
+  'psr17Factory' => singleton(function() {
+    return new Psr17Factory();
+  }),
+  'requestFactory' => alias('psr17Factory'),
+  'responseFactory' => alias('psr17Factory'),
+  'uriFactory' => alias('psr17Factory'),
+]);
 
-// $myService is taken from $container->get('myService').
-$container->set('myEntity', factory(spread(function(MyService $myService) {
-  return new MyEntity($myService);
-})));
+$requestFactory = $container->get('requestFactory');
+// $requestFactory === $container->get('psr17Factory').
 ```
 
 ## License
