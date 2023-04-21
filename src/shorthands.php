@@ -24,13 +24,6 @@ function singletonByClass(string $className) {
   return new Singleton(new FactoryByClass($className));
 }
 
-/**
- * @param mixed $value
- */
-function value($value): Value {
-  return new Value($value);
-}
-
 function alias(string $targetId): Alias {
   return new Alias($targetId);
 }

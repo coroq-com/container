@@ -12,7 +12,6 @@ use function Coroq\Container\factoryByClass;
 use function Coroq\Container\singleton;
 use function Coroq\Container\singletonByClass;
 use function Coroq\Container\spread;
-use function Coroq\Container\value;
 
 class ShorthandsTest extends TestCase {
   public function testFactory() {
@@ -55,11 +54,6 @@ class ShorthandsTest extends TestCase {
       ->willReturn('ok');
     $this->assertInstanceOf(Singleton::class, $singleton);
     $this->assertEquals('ok', $singleton->getValue($containerMock)->getTestValue());
-  }
-
-  public function testValue() {
-    $value = value('ok');
-    $this->assertInstanceOf(\Coroq\Container\Entry\Value::class, $value);
   }
 
   public function testAlias() {
