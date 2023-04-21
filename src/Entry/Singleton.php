@@ -5,23 +5,23 @@ namespace Coroq\Container\Entry;
 use Psr\Container\ContainerInterface;
 
 class Singleton implements EntryInterface {
-  /** @var callable */
-  private $factory;
+  /** @var EntryInterface */
+  private $entry;
   /** @var bool */
-  private $initialized;
+  private $cached;
   /** @var mixed */
-  private $instance;
+  private $cache;
 
-  public function __construct(callable $factory) {
-    $this->factory = $factory;
-    $this->initialized = false;
+  public function __construct(EntryInterface $entry) {
+    $this->entry = $entry;
+    $this->cached = false;
   }
 
   public function getValue(ContainerInterface $container) {
-    if (!$this->initialized) {
-      $this->instance = ($this->factory)($container);
-      $this->initialized = true;
+    if (!$this->cached) {
+      $this->cache = $this->entry->getValue($container);
+      $this->cached = true;
     }
-    return $this->instance;
+    return $this->cache;
   }
 }

@@ -10,6 +10,7 @@ use function Coroq\Container\alias;
 use function Coroq\Container\factory;
 use function Coroq\Container\factoryByClass;
 use function Coroq\Container\singleton;
+use function Coroq\Container\singletonByClass;
 use function Coroq\Container\spread;
 use function Coroq\Container\value;
 
@@ -28,7 +29,7 @@ class ShorthandsTest extends TestCase {
   }
 
   public function testFactoryByClass() {
-    $entry = factoryByClass(FactoryByClassSample::class);
+    $entry = factoryByClass(FactoryByClassShorthandSample::class);
     $this->assertInstanceOf(FactoryByClass::class, $entry);
   }
 
@@ -43,6 +44,17 @@ class ShorthandsTest extends TestCase {
       ->willReturn('ok');
     $this->assertInstanceOf(Singleton::class, $singleton);
     $this->assertEquals('ok', $singleton->getValue($containerMock));
+  }
+
+  public function testSingletonByClass() {
+    $singleton = singletonByClass(FactoryByClassShorthandSample::class);
+    $containerMock = $this->createMock(ContainerInterface::class);
+    $containerMock
+      ->method('get')
+      ->with('testValue')
+      ->willReturn('ok');
+    $this->assertInstanceOf(Singleton::class, $singleton);
+    $this->assertEquals('ok', $singleton->getValue($containerMock)->getTestValue());
   }
 
   public function testValue() {
@@ -65,5 +77,12 @@ class ShorthandsTest extends TestCase {
   }
 }
 
-class FactoryByClassSample {
+class FactoryByClassShorthandSample {
+  private $testValue;
+  public function __construct($testValue) {
+    $this->testValue = $testValue;
+  }
+  public function getTestValue() {
+    return $this->testValue;
+  }
 }

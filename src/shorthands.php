@@ -17,7 +17,11 @@ function factoryByClass(string $className) {
 }
 
 function singleton(callable $factory): Singleton {
-  return new Singleton(new SpreadArguments($factory));
+  return new Singleton(new Factory(new SpreadArguments($factory)));
+}
+
+function singletonByClass(string $className) {
+  return new Singleton(new FactoryByClass($className));
 }
 
 /**
