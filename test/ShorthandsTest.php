@@ -1,9 +1,14 @@
 <?php
 declare(strict_types=1);
+
+use Coroq\Container\Entry\Factory;
+use Coroq\Container\Entry\FactoryByClass;
+use Coroq\Container\Entry\Singleton;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use function Coroq\Container\alias;
 use function Coroq\Container\factory;
+use function Coroq\Container\factoryByClass;
 use function Coroq\Container\singleton;
 use function Coroq\Container\spread;
 use function Coroq\Container\value;
@@ -18,8 +23,13 @@ class ShorthandsTest extends TestCase {
       ->method('get')
       ->with('ok')
       ->willReturn('ok');
-    $this->assertInstanceOf(\Coroq\Container\Entry\Factory::class, $factory);
+    $this->assertInstanceOf(Factory::class, $factory);
     $this->assertEquals('ok', $factory->getValue($containerMock));
+  }
+
+  public function testFactoryByClass() {
+    $entry = factoryByClass(FactoryByClassSample::class);
+    $this->assertInstanceOf(FactoryByClass::class, $entry);
   }
 
   public function testSingleton() {
@@ -31,7 +41,7 @@ class ShorthandsTest extends TestCase {
       ->method('get')
       ->with('ok')
       ->willReturn('ok');
-    $this->assertInstanceOf(\Coroq\Container\Entry\Singleton::class, $singleton);
+    $this->assertInstanceOf(Singleton::class, $singleton);
     $this->assertEquals('ok', $singleton->getValue($containerMock));
   }
 
@@ -53,4 +63,7 @@ class ShorthandsTest extends TestCase {
     $this->assertInstanceOf(\Coroq\Container\SpreadArguments::class, $spread);
     $this->assertEquals('ok', $spread($containerMock));
   }
+}
+
+class FactoryByClassSample {
 }
