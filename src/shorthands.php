@@ -6,7 +6,6 @@ use Coroq\Container\Entry\Alias;
 use Coroq\Container\Entry\Factory;
 use Coroq\Container\Entry\FactoryByClass;
 use Coroq\Container\Entry\Singleton;
-use Coroq\Container\Entry\Value;
 
 function factory(callable $factory): Factory {
   return new Factory(new SpreadArguments($factory));

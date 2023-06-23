@@ -3,30 +3,39 @@ declare(strict_types=1);
 namespace Coroq\Container\Entry;
 
 use Psr\Container\ContainerInterface;
+use Psr\Container\NotFoundExceptionInterface;
 use ReflectionClass;
+use ReflectionParameter;
 
 class FactoryByClass implements EntryInterface {
   /** @vaar ReflectionClass */
   private $classReflection;
 
-  /** @var array */
-  private $parameterNames;
+  /** @var array<ReflectionParameter> */
+  private $parameters;
 
   public function __construct(string $className) {
     $this->classReflection = new ReflectionClass($className);
     $constructorReflection = $this->classReflection->getConstructor();
-    $this->parameterNames = [];
+    $this->parameters = [];
     if ($constructorReflection) {
-      foreach ($constructorReflection->getParameters() as $parameter) {
-        $this->parameterNames[] = $parameter->getName();
-      }
+      $this->parameters = $constructorReflection->getParameters();
     }
   }
 
   public function getValue(ContainerInterface $container) {
     $arguments = [];
-    foreach ($this->parameterNames as $parameterName) {
-      $arguments[] = $container->get($parameterName);
+    foreach ($this->parameters as $parameter) {
+      $parameterName = $parameter->getName();
+      try {
+        $arguments[] = $container->get($parameterName);
+      }
+      catch (NotFoundExceptionInterface $exception) {
+        if (!$parameter->isDefaultValueAvailable()) {
+          throw $exception;
+        }
+        $arguments[] = $parameter->getDefaultValue();
+      }
     }
     return $this->classReflection->newInstanceArgs($arguments);
   }

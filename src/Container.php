@@ -5,7 +5,6 @@ namespace Coroq\Container;
 use Coroq\Container\Entry\EntryInterface;
 use Coroq\Container\Entry\Value;
 use Coroq\Container\Exception\NotFoundException;
-use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\ContainerInterface;
 
 class Container implements ContainerInterface {
@@ -27,7 +26,7 @@ class Container implements ContainerInterface {
    */
   public function get(string $id) {
     if (!$this->has($id)) {
-      throw new NotFoundException("Entry not found: {$id}");
+      throw new NotFoundException("Entry not found in container: {$id}");
     }
     return $this->entries[$id]->getValue($this);
   }
