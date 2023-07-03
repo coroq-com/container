@@ -8,22 +8,21 @@ use ReflectionClass;
 use ReflectionParameter;
 
 class FactoryByClass implements EntryInterface {
-  /** @vaar ReflectionClass */
+  /** @var string */
+  private $className;
+
+  /** @var ?ReflectionClass */
   private $classReflection;
 
   /** @var array<ReflectionParameter> */
   private $parameters;
 
   public function __construct(string $className) {
-    $this->classReflection = new ReflectionClass($className);
-    $constructorReflection = $this->classReflection->getConstructor();
-    $this->parameters = [];
-    if ($constructorReflection) {
-      $this->parameters = $constructorReflection->getParameters();
-    }
+    $this->className = $className;
   }
 
   public function getValue(ContainerInterface $container) {
+    $this->reflection();
     $arguments = [];
     foreach ($this->parameters as $parameter) {
       $parameterName = $parameter->getName();
@@ -38,5 +37,17 @@ class FactoryByClass implements EntryInterface {
       }
     }
     return $this->classReflection->newInstanceArgs($arguments);
+  }
+
+  private function reflection(): void {
+    if ($this->classReflection) {
+      return;
+    }
+    $this->classReflection = new ReflectionClass($this->className);
+    $constructorReflection = $this->classReflection->getConstructor();
+    $this->parameters = [];
+    if ($constructorReflection) {
+      $this->parameters = $constructorReflection->getParameters();
+    }
   }
 }
