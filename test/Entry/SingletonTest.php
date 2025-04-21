@@ -2,10 +2,13 @@
 declare(strict_types=1);
 
 use Coroq\Container\Entry\EntryInterface;
-use Coroq\Container\Entry\Singleton;
+use Coroq\Container\Entry\SingletonEntry;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 
+/**
+ * @covers Coroq\Container\Entry\SingletonEntry
+ */
 class SingletonTest extends TestCase {
   public function testGetValueCallsGivenCallable() {
     $containerMock = $this->createMock(ContainerInterface::class);
@@ -13,7 +16,7 @@ class SingletonTest extends TestCase {
     $entryMock
       ->method('getValue')
       ->willReturn('ok');
-    $singletonEntry = new Singleton($entryMock);
+    $singletonEntry = new SingletonEntry($entryMock);
     $this->assertEquals('ok', $singletonEntry->getValue($containerMock));
   }
 
@@ -24,7 +27,7 @@ class SingletonTest extends TestCase {
       ->expects($this->once())
       ->method('getValue')
       ->willReturn(1, 2);
-    $singletonEntry = new Singleton($entryMock);
+    $singletonEntry = new SingletonEntry($entryMock);
     $this->assertEquals(1, $singletonEntry->getValue($containerMock));
     $this->assertEquals(1, $singletonEntry->getValue($containerMock));
   }

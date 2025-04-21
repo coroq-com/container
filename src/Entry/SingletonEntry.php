@@ -4,12 +4,9 @@ namespace Coroq\Container\Entry;
 
 use Psr\Container\ContainerInterface;
 
-class Singleton implements EntryInterface {
-  /** @var EntryInterface */
-  private $entry;
-  /** @var bool */
-  private $cached;
-  /** @var mixed */
+class SingletonEntry implements EntryInterface {
+  private EntryInterface $entry;
+  private bool $cached;
   private $cache;
 
   public function __construct(EntryInterface $entry) {

@@ -4,9 +4,8 @@ namespace Coroq\Container\Entry;
 
 use Psr\Container\ContainerInterface;
 
-class Alias implements EntryInterface {
-  /** @var string */
-  private $targetId;
+class AliasEntry implements EntryInterface {
+  private string $targetId;
 
   public function __construct(string $targetId) {
     $this->targetId = $targetId;

@@ -1,25 +1,20 @@
-# DI Container
+# Coroq Container
 
-A minimalistic, easy-to-learn Dependency Injection (DI) Container for PHP.
+A lightweight, PSR-11 compatible Dependency Injection (DI) Container for PHP.
 
-This library focuses on simplicity and ease of use, providing a streamlined approach to Dependency Injection without the need for a complex DSL, auto-wiring, or extensive configuration. As a result, it is beginner-friendly and well-suited for those using DI for the first time or for projects where a more elaborate solution might not be necessary.
+This library provides a modular approach to dependency injection with type-based autowiring. It offers static and dynamic container implementations that can be used independently or together through the OmniContainer.
 
 ## Features
 
-- **PSR-11 compatible**: implements `Psr\Container\ContainerInterface`
-- **Lightweight**: No bloat or unnecessary features
-- **Simplicity**: No DSL to learn, reducing learning time
-- **Focused**: No auto-wiring or advanced features, keeping the library lean and efficient
-
-## Limitations
-
-- **No auto-wiring**: Services need to be manually defined and registered in the container
-- **No configuration file**: All configuration is done programmatically
-- **No built-in support for circular dependencies**: Circular dependency graphs must be handled manually
+- **PSR-11 compatible**: Implements `Psr\Container\ContainerInterface`
+- **Modular architecture**: Multiple container types that can be used individually or combined
+- **Type-based autowiring**: Automatically resolves dependencies based on type declarations
+- **Singleton management**: Built-in support for shared instances
+- **Namespace-based resolution**: Automatically instantiates classes from configured namespaces
+- **Circular dependency detection**: Prevents infinite recursion with clear error messages
+- **Minimal dependencies**: Only requires PHP 8.0+ and PSR Container Interface
 
 ## Installation
-
-Use [Composer](https://getcomposer.org/) to install the library:
 
 ```bash
 composer require coroq/container
@@ -27,75 +22,93 @@ composer require coroq/container
 
 ## Usage
 
-### Basic usage
+### OmniContainer
+
+The OmniContainer combines static and dynamic containers for a complete DI solution:
 
 ```php
-use Coroq\Container\Container;
-use function Coroq\Container\factory;
-use function Coroq\Container\singleton;
+use Coroq\Container\OmniContainer;
 
-// Create a container.
-$container = new Container();
+// Create container
+$container = new OmniContainer();
 
-// Register some entries.
+// Configure namespaces for auto-resolution
+$container->addNamespace('App\\Domain');
+$container->addNamespace('App\\Infrastructure');
 
-// A regular value.
-$container->set('config', ['site_name' => 'Container Example']);
+// Register entries
+$container->setValue('config', ['db' => 'mysql:host=localhost;dbname=app']);
+$container->setClass('userRepository', UserRepository::class);
+$container->setSingletonClass('logger', Logger::class);
 
-// Singleton: Only one instance of MyService is created and reused.
-$container->set('myService', singleton(function($config) {
-  // singleton() provides arguments from container entries that match the parameter name.
-  // So, $config is retrieved from $container->get('config').
-  $myService = new MyService();
-  $myService->setSiteName($config['site_name']);
-  return $myService;
-}));
+// Register factory methods
+$container->setFactory('session', function($config) {
+    return new Session($config['session_timeout']);
+});
+$container->setSingletonFactory('database', function($config) {
+    return new Database($config['db']);
+});
 
-// Factory: A new instance of MyEntity is created every time it's requested.
-$container->set('myEntity', factory(function(MyService $myService) {
-  // You can use type hints for the arguments.
-  // Note that arguments are bound by their names, not their types.
-  return new MyEntity($myService);
-}));
+// Create alias
+$container->setAlias('repos.user', 'userRepository');
 
-// Get a new instance of MyEntity from the container.
-$myEntity = $container->get('myEntity');
+// Retrieve entries
+$logger = $container->get('logger');
+$userRepo = $container->get('userRepository');
+$userService = $container->get(App\Domain\UserService::class);
 ```
 
-### Setting multiple entries at once
+### StaticContainer
+
+For explicitly registered entries:
 
 ```php
-// With the setMany() method, you can quickly add multiple entries to the container.
-$container->setMany([
-  'entry1' => 'value1',
-  'entry2' => 'value2',
-]);
+use Coroq\Container\StaticContainer;
+use Coroq\Container\ArgumentsResolver\TypeBasedArgumentsResolver;
 
-// This is the same as doing:
-$container->set('entry1', 'value1');
-$container->set('entry2', 'value2');
+$resolver = new TypeBasedArgumentsResolver($container);
+$container = new StaticContainer($resolver);
+
+// Register entries
+$container->setValue('appName', 'My App');
+$container->setFactory('userService', function($userRepository) {
+    return new UserService($userRepository);
+});
+$container->setSingletonClass('mailer', Mailer::class);
+
+// Get entries
+$service = $container->get('userService');
 ```
 
-### Alias
+### DynamicContainer
 
-Create aliases for a single entry using the alias() function. This allows you to reference the same entry in the container with different identifiers.
+Automatically instantiates classes from registered namespaces:
 
 ```php
-use function Coroq\Container\alias;
+use Coroq\Container\DynamicContainer;
 
-$container->setMany([
-  'psr17Factory' => singleton(function() {
-    return new Psr17Factory();
-  }),
-  'requestFactory' => alias('psr17Factory'),
-  'responseFactory' => alias('psr17Factory'),
-  'uriFactory' => alias('psr17Factory'),
-]);
+$container = new DynamicContainer();
+$container->addNamespace('App\\Domain');
 
-$requestFactory = $container->get('requestFactory');
-// $requestFactory === $container->get('psr17Factory').
+// Auto-creates instances from registered namespaces
+$userService = $container->get(App\Domain\UserService::class);
+```
+
+### CompositeContainer
+
+Delegates to multiple containers:
+
+```php
+use Coroq\Container\CompositeContainer;
+
+$container = new CompositeContainer();
+$container->addContainer($staticContainer);
+$container->addContainer($dynamicContainer);
+
+// Searches containers in order until entry is found
+$service = $container->get('service');
 ```
 
 ## License
 
-This project is licensed under the MIT License.
+MIT License

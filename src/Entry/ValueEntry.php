@@ -1,10 +1,10 @@
 <?php
 declare(strict_types=1);
 namespace Coroq\Container\Entry;
+
 use Psr\Container\ContainerInterface;
 
-class Value implements EntryInterface {
-  /** @var mixed */
+class ValueEntry implements EntryInterface {
   private $value;
 
   /**
