@@ -16,10 +16,17 @@ use ReflectionNamedType;
 use ReflectionParameter;
 
 class TypeBasedArgumentsResolver implements ArgumentsResolverInterface {
-  private ContainerInterface $container;
+  private ?ContainerInterface $container = null;
 
-  public function __construct(ContainerInterface $container) {
+  public function setContainer(ContainerInterface $container): void {
     $this->container = $container;
+  }
+
+  private function getContainer(): ContainerInterface {
+    if ($this->container === null) {
+      throw new \LogicException('Container is not set. Call setContainer() before using this resolver.');
+    }
+    return $this->container;
   }
 
   public function resolveConstructorArguments(string $className): array {
@@ -76,7 +83,7 @@ class TypeBasedArgumentsResolver implements ArgumentsResolverInterface {
         ));
       }
 
-      return $this->container->get($parameterType->getName());
+      return $this->getContainer()->get($parameterType->getName());
     }
     catch (ContainerExceptionInterface $exception) {
       if ($exception instanceof AutowiringException || $exception instanceof NotFoundExceptionInterface) {

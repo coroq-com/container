@@ -4,7 +4,6 @@ declare(strict_types=1);
 namespace Coroq\Container;
 
 use Coroq\Container\ArgumentsResolver\ArgumentsResolverInterface;
-use Coroq\Container\ArgumentsResolver\TypeBasedArgumentsResolver;
 use Coroq\Container\Exception\NotFoundException;
 use Psr\Container\ContainerInterface;
 
@@ -17,12 +16,25 @@ class DynamicContainer implements ContainerInterface {
   /** @var object[] */
   private array $items;
 
-  private ArgumentsResolverInterface $argumentsResolver;
+  private ?ArgumentsResolverInterface $argumentsResolver = null;
 
   public function __construct(?ArgumentsResolverInterface $argumentsResolver = null) {
     $this->namespaces = [];
     $this->items = [];
-    $this->argumentsResolver = $argumentsResolver ?: new TypeBasedArgumentsResolver($this);
+    if ($argumentsResolver !== null) {
+      $this->setArgumentsResolver($argumentsResolver);
+    }
+  }
+
+  public function setArgumentsResolver(ArgumentsResolverInterface $argumentsResolver): void {
+    $this->argumentsResolver = $argumentsResolver;
+  }
+
+  private function getArgumentsResolver(): ArgumentsResolverInterface {
+    if ($this->argumentsResolver === null) {
+      throw new \LogicException('ArgumentsResolver is not set. Call setArgumentsResolver() before using this container.');
+    }
+    return $this->argumentsResolver;
   }
 
   public function addNamespace(string $namespace): void {
@@ -42,7 +54,7 @@ class DynamicContainer implements ContainerInterface {
     }
     try {
       $this->detectRecursion($className);
-      $arguments = $this->argumentsResolver->resolveConstructorArguments($className);
+      $arguments = $this->getArgumentsResolver()->resolveConstructorArguments($className);
       $this->items[$className] = new $className(...$arguments);
       return $this->items[$className];
     }

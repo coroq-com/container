@@ -2,12 +2,13 @@
 declare(strict_types=1);
 namespace Coroq\Container;
 
+use Coroq\Container\ArgumentsResolver\ArgumentsResolverInterface;
 use Coroq\Container\ArgumentsResolver\TypeBasedArgumentsResolver;
 use Psr\Container\ContainerInterface;
 
 class OmniContainer implements ContainerInterface {
   use CircularDependencyDetectionTrait;
-  
+
   private CompositeContainer $compositeContainer;
   private StaticContainer $staticContainer;
   private DynamicContainer $dynamicContainer;
@@ -18,13 +19,19 @@ class OmniContainer implements ContainerInterface {
 
     $this->compositeContainer = new CompositeContainer();
 
-    $argumentsResolver = new TypeBasedArgumentsResolver($this);
-
-    $this->staticContainer = new StaticContainer($argumentsResolver);
-    $this->dynamicContainer = new DynamicContainer($argumentsResolver);
+    $this->staticContainer = new StaticContainer();
+    $this->dynamicContainer = new DynamicContainer();
 
     $this->compositeContainer->addContainer($this->staticContainer);
     $this->compositeContainer->addContainer($this->dynamicContainer);
+
+    $this->setArgumentsResolver(new TypeBasedArgumentsResolver());
+  }
+
+  public function setArgumentsResolver(ArgumentsResolverInterface $argumentsResolver): void {
+    $argumentsResolver->setContainer($this);
+    $this->staticContainer->setArgumentsResolver($argumentsResolver);
+    $this->dynamicContainer->setArgumentsResolver($argumentsResolver);
   }
 
   public function addNamespace(string $namespace): void {

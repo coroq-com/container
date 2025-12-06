@@ -2,7 +2,15 @@
 declare(strict_types=1);
 namespace Coroq\Container\ArgumentsResolver;
 
+use Psr\Container\ContainerInterface;
+
 interface ArgumentsResolverInterface {
+
+  /**
+   * @param ContainerInterface $container
+   * @return void
+   */
+  public function setContainer(ContainerInterface $container): void;
 
   /**
    * @param string $className

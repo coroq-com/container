@@ -16,11 +16,24 @@ class StaticContainer implements ContainerInterface {
   use CircularDependencyDetectionTrait;
 
   private array $entries;
-  private ArgumentsResolverInterface $argumentsResolver;
+  private ?ArgumentsResolverInterface $argumentsResolver = null;
 
-  public function __construct(ArgumentsResolverInterface $argumentsResolver) {
+  public function __construct(?ArgumentsResolverInterface $argumentsResolver = null) {
     $this->entries = [];
+    if ($argumentsResolver !== null) {
+      $this->setArgumentsResolver($argumentsResolver);
+    }
+  }
+
+  public function setArgumentsResolver(ArgumentsResolverInterface $argumentsResolver): void {
     $this->argumentsResolver = $argumentsResolver;
+  }
+
+  private function getArgumentsResolver(): ArgumentsResolverInterface {
+    if ($this->argumentsResolver === null) {
+      throw new \LogicException('ArgumentsResolver is not set. Call setArgumentsResolver() before using this container.');
+    }
+    return $this->argumentsResolver;
   }
 
   /**
@@ -77,19 +90,19 @@ class StaticContainer implements ContainerInterface {
   }
 
   public function setFactory(string $id, callable $factory): void {
-    $this->set($id, new FactoryEntry($this->argumentsResolver, $factory));
+    $this->set($id, new FactoryEntry($this->getArgumentsResolver(), $factory));
   }
 
   public function setSingletonFactory(string $id, callable $factory): void {
-    $this->set($id, new SingletonEntry(new FactoryEntry($this->argumentsResolver, $factory)));
+    $this->set($id, new SingletonEntry(new FactoryEntry($this->getArgumentsResolver(), $factory)));
   }
 
   public function setClass(string $id, string $className): void {
-    $this->set($id, new ClassEntry($this->argumentsResolver, $className));
+    $this->set($id, new ClassEntry($this->getArgumentsResolver(), $className));
   }
 
   public function setSingletonClass(string $id, string $className): void {
-    $this->set($id, new SingletonEntry(new ClassEntry($this->argumentsResolver, $className)));
+    $this->set($id, new SingletonEntry(new ClassEntry($this->getArgumentsResolver(), $className)));
   }
 
   public function setValue(string $id, $value): void {

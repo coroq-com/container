@@ -60,7 +60,8 @@ class DynamicContainerTest extends TestCase {
   public function testGetInstantiatesClassIfInNamespace(): void {
     $argumentsResolver = $this->createMock(ArgumentsResolverInterface::class);
     $argumentsResolver->method('resolveConstructorArguments')->willReturn([1, 2]);
-    $container = new DynamicContainer($argumentsResolver);
+    $container = new DynamicContainer();
+    $container->setArgumentsResolver($argumentsResolver);
     $container->addNamespace('Coroq\\Test');
     $result = $container->get(SampleClassWithConstructor::class);
     $this->assertInstanceOf(SampleClassWithConstructor::class, $result);
@@ -70,7 +71,8 @@ class DynamicContainerTest extends TestCase {
   public function testGetInstantiatesClassIfInSecondNamespace(): void {
     $argumentsResolver = $this->createMock(ArgumentsResolverInterface::class);
     $argumentsResolver->method('resolveConstructorArguments')->willReturn([]);
-    $container = new DynamicContainer($argumentsResolver);
+    $container = new DynamicContainer();
+    $container->setArgumentsResolver($argumentsResolver);
     $container->addNamespace('Coroq\\Test');
     $container->addNamespace('Coroq\\Test2');
     $result = $container->get(SampleClass2::class);
@@ -81,7 +83,8 @@ class DynamicContainerTest extends TestCase {
     $mockResolver = $this->createMock(ArgumentsResolverInterface::class);
     $mockResolver->method('resolveConstructorArguments')->willReturn([]);
 
-    $container = new DynamicContainer($mockResolver);
+    $container = new DynamicContainer();
+    $container->setArgumentsResolver($mockResolver);
     $container->addNamespace('Coroq\\Test\\');
 
     $firstInstance = $container->get(SampleClass::class);
@@ -93,7 +96,8 @@ class DynamicContainerTest extends TestCase {
   public function testRecursionDetectionThrowsException(): void {
     $argumentsResolver = $this->createMock(ArgumentsResolverInterface::class);
 
-    $container = new DynamicContainer($argumentsResolver);
+    $container = new DynamicContainer();
+    $container->setArgumentsResolver($argumentsResolver);
 
     $argumentsResolver->method('resolveConstructorArguments')->willReturnCallback(function () use ($container) {
       $container->get(RecursiveClass::class);
@@ -104,5 +108,15 @@ class DynamicContainerTest extends TestCase {
     $this->expectException(CircularDependencyException::class);
 
     $container->get(RecursiveClass::class);
+  }
+
+  public function testThrowsLogicExceptionIfArgumentsResolverNotSet(): void {
+    $container = new DynamicContainer();
+    $container->addNamespace('Coroq\\Test');
+
+    $this->expectException(\LogicException::class);
+    $this->expectExceptionMessage('ArgumentsResolver is not set');
+
+    $container->get(SampleClass::class);
   }
 }
