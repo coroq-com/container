@@ -5,10 +5,11 @@ namespace Coroq\Container;
 
 use Coroq\Container\ArgumentsResolver\ArgumentsResolverInterface;
 use Coroq\Container\Exception\NotFoundException;
-use Psr\Container\ContainerInterface;
+use ReflectionClass;
 
-class DynamicContainer implements ContainerInterface {
+class DynamicContainer implements CascadingContainerInterface {
   use CircularDependencyDetectionTrait;
+  use CascadingContainerTrait;
 
   /** @var string[] */
   private array $namespaces;
@@ -54,7 +55,11 @@ class DynamicContainer implements ContainerInterface {
     }
     try {
       $this->detectRecursion($className);
-      $arguments = $this->getArgumentsResolver()->resolveConstructorArguments($className);
+      $class = new ReflectionClass($className);
+      $constructor = $class->getConstructor();
+      $arguments = $constructor
+        ? $this->getArgumentsResolver()->resolve($constructor, $this->getRootContainer())
+        : [];
       $this->items[$className] = new $className(...$arguments);
       return $this->items[$className];
     }

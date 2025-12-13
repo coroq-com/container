@@ -3,6 +3,7 @@
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use Coroq\Container\CompositeContainer;
+use Coroq\Container\CascadingContainerInterface;
 use Coroq\Container\Exception\NotFoundException;
 
 /**
@@ -111,5 +112,25 @@ class CompositeContainerTest extends TestCase {
 
     $this->expectException(NotFoundException::class);
     $compositeContainer->get('some_id');
+  }
+
+  public function testSetRootContainerPropagatedToCascadingContainers(): void {
+    $compositeContainer = new CompositeContainer();
+    $rootContainer = $this->createMock(ContainerInterface::class);
+
+    // Cascading container should receive setRootContainer
+    $cascadingContainer = $this->createMock(CascadingContainerInterface::class);
+    $cascadingContainer
+      ->expects($this->once())
+      ->method('setRootContainer')
+      ->with($rootContainer);
+
+    // Non-cascading container should not be affected
+    $regularContainer = $this->createMock(ContainerInterface::class);
+
+    $compositeContainer->addContainer($cascadingContainer);
+    $compositeContainer->addContainer($regularContainer);
+
+    $compositeContainer->setRootContainer($rootContainer);
   }
 }

@@ -12,24 +12,26 @@ class OmniContainer implements ContainerInterface {
   private CompositeContainer $compositeContainer;
   private StaticContainer $staticContainer;
   private DynamicContainer $dynamicContainer;
+  private ArgumentsResolverInterface $argumentsResolver;
   private array $aliases;
 
-  public function __construct() {
+  public function __construct(?ArgumentsResolverInterface $argumentsResolver = null) {
     $this->aliases = [];
+    $this->argumentsResolver = $argumentsResolver ?? new TypeBasedArgumentsResolver();
+
+    $this->staticContainer = new StaticContainer($this->argumentsResolver);
+    $this->dynamicContainer = new DynamicContainer($this->argumentsResolver);
 
     $this->compositeContainer = new CompositeContainer();
-
-    $this->staticContainer = new StaticContainer();
-    $this->dynamicContainer = new DynamicContainer();
-
     $this->compositeContainer->addContainer($this->staticContainer);
     $this->compositeContainer->addContainer($this->dynamicContainer);
 
-    $this->setArgumentsResolver(new TypeBasedArgumentsResolver());
+    // Set this container as root for all children
+    $this->compositeContainer->setRootContainer($this);
   }
 
   public function setArgumentsResolver(ArgumentsResolverInterface $argumentsResolver): void {
-    $argumentsResolver->setContainer($this);
+    $this->argumentsResolver = $argumentsResolver;
     $this->staticContainer->setArgumentsResolver($argumentsResolver);
     $this->dynamicContainer->setArgumentsResolver($argumentsResolver);
   }

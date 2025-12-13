@@ -6,6 +6,7 @@ use Coroq\Container\ArgumentsResolver\NameBasedArgumentsResolver;
 use Coroq\Container\Exception\AutowiringException;
 use Coroq\Container\Exception\NotFoundException;
 use Psr\Container\NotFoundExceptionInterface;
+use Coroq\CallableReflector\CallableReflector;
 
 /**
  * @covers Coroq\Container\ArgumentsResolver\NameBasedArgumentsResolver
@@ -17,13 +18,14 @@ class NameBasedArgumentsResolverTest extends TestCase {
   protected function setUp(): void {
     $this->mockContainer = $this->createMock(ContainerInterface::class);
     $this->resolver = new NameBasedArgumentsResolver();
-    $this->resolver->setContainer($this->mockContainer);
   }
 
   public function testResolveArgumentsOfClassWithoutConstructor(): void {
-    $arguments = $this->resolver->resolveConstructorArguments(NameBasedSampleService::class);
+    $class = new ReflectionClass(NameBasedSampleService::class);
+    $constructor = $class->getConstructor();
 
-    $this->assertSame([], $arguments);
+    // No constructor, so we don't call resolve
+    $this->assertNull($constructor);
   }
 
   public function testResolveArgumentsOfConstructorByParameterName(): void {
@@ -38,7 +40,9 @@ class NameBasedArgumentsResolverTest extends TestCase {
       ->with('service')
       ->willReturn(new NameBasedSampleService());
 
-    $arguments = $this->resolver->resolveConstructorArguments(NameBasedSampleController::class);
+    $class = new ReflectionClass(NameBasedSampleController::class);
+    $constructor = $class->getConstructor();
+    $arguments = $this->resolver->resolve($constructor, $this->mockContainer);
 
     $this->assertCount(1, $arguments);
     $this->assertInstanceOf(NameBasedSampleService::class, $arguments[0]);
@@ -56,7 +60,9 @@ class NameBasedArgumentsResolverTest extends TestCase {
       ->with('service')
       ->willReturn(new NameBasedSampleService());
 
-    $arguments = $this->resolver->resolveCallableArguments(function ($service) {});
+    $callable = function ($service) {};
+    $reflection = CallableReflector::createFromCallable($callable);
+    $arguments = $this->resolver->resolve($reflection, $this->mockContainer);
 
     $this->assertCount(1, $arguments);
     $this->assertInstanceOf(NameBasedSampleService::class, $arguments[0]);
@@ -77,7 +83,9 @@ class NameBasedArgumentsResolverTest extends TestCase {
         ['logger', new NameBasedSampleService()],
       ]);
 
-    $arguments = $this->resolver->resolveCallableArguments(function ($config, $logger) {});
+    $callable = function ($config, $logger) {};
+    $reflection = CallableReflector::createFromCallable($callable);
+    $arguments = $this->resolver->resolve($reflection, $this->mockContainer);
 
     $this->assertCount(2, $arguments);
     $this->assertSame(['key' => 'value'], $arguments[0]);
@@ -90,7 +98,9 @@ class NameBasedArgumentsResolverTest extends TestCase {
       ->with('service')
       ->willReturn(false);
 
-    $arguments = $this->resolver->resolveCallableArguments(function ($service = 'default value') {});
+    $callable = function ($service = 'default value') {};
+    $reflection = CallableReflector::createFromCallable($callable);
+    $arguments = $this->resolver->resolve($reflection, $this->mockContainer);
 
     $this->assertCount(1, $arguments);
     $this->assertSame('default value', $arguments[0]);
@@ -109,14 +119,18 @@ class NameBasedArgumentsResolverTest extends TestCase {
 
     $this->expectException(NotFoundExceptionInterface::class);
 
-    $this->resolver->resolveCallableArguments(function ($service) {});
+    $callable = function ($service) {};
+    $reflection = CallableReflector::createFromCallable($callable);
+    $this->resolver->resolve($reflection, $this->mockContainer);
   }
 
   public function testThrowsExceptionForVariadicParameter(): void {
     $this->expectException(AutowiringException::class);
     $this->expectExceptionMessage('Variadic parameter $handlers is not supported');
 
-    $this->resolver->resolveCallableArguments(function (...$handlers) {});
+    $callable = function (...$handlers) {};
+    $reflection = CallableReflector::createFromCallable($callable);
+    $this->resolver->resolve($reflection, $this->mockContainer);
   }
 
   public function testThrowsExceptionForVariadicParameterAfterRegularParameters(): void {
@@ -133,16 +147,9 @@ class NameBasedArgumentsResolverTest extends TestCase {
     $this->expectException(AutowiringException::class);
     $this->expectExceptionMessage('Variadic parameter $handlers is not supported');
 
-    $this->resolver->resolveCallableArguments(function ($logger, ...$handlers) {});
-  }
-
-  public function testThrowsLogicExceptionIfContainerNotSet(): void {
-    $resolver = new NameBasedArgumentsResolver();
-
-    $this->expectException(\LogicException::class);
-    $this->expectExceptionMessage('Container is not set');
-
-    $resolver->resolveCallableArguments(function ($service) {});
+    $callable = function ($logger, ...$handlers) {};
+    $reflection = CallableReflector::createFromCallable($callable);
+    $this->resolver->resolve($reflection, $this->mockContainer);
   }
 }
 

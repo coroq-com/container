@@ -3,24 +3,15 @@ declare(strict_types=1);
 namespace Coroq\Container\ArgumentsResolver;
 
 use Psr\Container\ContainerInterface;
+use ReflectionFunctionAbstract;
 
 interface ArgumentsResolverInterface {
-
   /**
+   * Resolve arguments for a callable or constructor.
+   *
+   * @param ReflectionFunctionAbstract $reflection
    * @param ContainerInterface $container
-   * @return void
-   */
-  public function setContainer(ContainerInterface $container): void;
-
-  /**
-   * @param string $className
    * @return array<mixed> Resolved arguments
    */
-  public function resolveConstructorArguments(string $className): array;
-
-  /**
-   * @param callable $callable
-   * @return array<mixed> Resolved arguments
-   */
-  public function resolveCallableArguments(callable $callable): array;
+  public function resolve(ReflectionFunctionAbstract $reflection, ContainerInterface $container): array;
 }

@@ -94,10 +94,12 @@ class StaticContainerTest extends TestCase {
 
   public function testThrowsLogicExceptionIfArgumentsResolverNotSet(): void {
     $container = new StaticContainer();
+    $container->setFactory('service', function() { return new stdClass(); });
 
     $this->expectException(\LogicException::class);
     $this->expectExceptionMessage('ArgumentsResolver is not set');
 
-    $container->setFactory('service', function() { return new stdClass(); });
+    // Exception is thrown when getting, not when setting
+    $container->get('service');
   }
 }

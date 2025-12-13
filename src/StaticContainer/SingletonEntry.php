@@ -1,7 +1,8 @@
 <?php
 declare(strict_types=1);
-namespace Coroq\Container\Entry;
+namespace Coroq\Container\StaticContainer;
 
+use Coroq\Container\ArgumentsResolver\ArgumentsResolverInterface;
 use Psr\Container\ContainerInterface;
 
 class SingletonEntry implements EntryInterface {
@@ -14,9 +15,9 @@ class SingletonEntry implements EntryInterface {
     $this->cached = false;
   }
 
-  public function getValue(ContainerInterface $container) {
+  public function getValue(ContainerInterface $container, ArgumentsResolverInterface $argumentsResolver) {
     if (!$this->cached) {
-      $this->cache = $this->entry->getValue($container);
+      $this->cache = $this->entry->getValue($container, $argumentsResolver);
       $this->cached = true;
     }
     return $this->cache;

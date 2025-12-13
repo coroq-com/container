@@ -5,7 +5,7 @@ namespace Coroq\Container;
 use Coroq\Container\Exception\NotFoundException;
 use Psr\Container\ContainerInterface;
 
-class CompositeContainer implements ContainerInterface {
+class CompositeContainer implements CascadingContainerInterface {
   /** @var ContainerInterface[] */
   private array $containers;
 
@@ -13,8 +13,16 @@ class CompositeContainer implements ContainerInterface {
     $this->containers = [];
   }
 
-  public function addContainer(ContainerInterface $container) {
+  public function addContainer(ContainerInterface $container): void {
     $this->containers[] = $container;
+  }
+
+  public function setRootContainer(ContainerInterface $rootContainer): void {
+    foreach ($this->containers as $container) {
+      if ($container instanceof CascadingContainerInterface) {
+        $container->setRootContainer($rootContainer);
+      }
+    }
   }
 
   public function get(string $id) {

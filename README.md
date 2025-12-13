@@ -1,18 +1,6 @@
 # Coroq Container
 
-A lightweight, PSR-11 compatible Dependency Injection (DI) Container for PHP.
-
-This library provides a modular approach to dependency injection with type-based autowiring. It offers static and dynamic container implementations that can be used independently or together through the OmniContainer.
-
-## Features
-
-- **PSR-11 compatible**: Implements `Psr\Container\ContainerInterface`
-- **Modular architecture**: Multiple container types that can be used individually or combined
-- **Type-based autowiring**: Automatically resolves dependencies based on type declarations
-- **Singleton management**: Built-in support for shared instances
-- **Namespace-based resolution**: Automatically instantiates classes from configured namespaces
-- **Circular dependency detection**: Prevents infinite recursion with clear error messages
-- **Minimal dependencies**: Only requires PHP 8.0+ and PSR Container Interface
+A lightweight, PSR-11 compatible Dependency Injection Container for PHP.
 
 ## Installation
 
@@ -20,94 +8,187 @@ This library provides a modular approach to dependency injection with type-based
 composer require coroq/container
 ```
 
-## Usage
-
-### OmniContainer
-
-The OmniContainer combines static and dynamic containers for a complete DI solution:
+## Quick Start
 
 ```php
 use Coroq\Container\OmniContainer;
 
-// Create container
 $container = new OmniContainer();
 
-// Configure namespaces for auto-resolution
-$container->addNamespace('App\\Domain');
-$container->addNamespace('App\\Infrastructure');
+// Register a value
+$container->setValue('app.name', 'My Application');
+$container->get('app.name');  // => 'My Application'
 
-// Register entries
-$container->setValue('config', ['db' => 'mysql:host=localhost;dbname=app']);
+// Register a class (new instance each time)
 $container->setClass('userRepository', UserRepository::class);
-$container->setSingletonClass('logger', Logger::class);
+$container->get('userRepository');  // => new UserRepository()
+$container->get('userRepository');  // => new UserRepository() (different instance)
 
-// Register factory methods
-$container->setFactory('session', function($config) {
-    return new Session($config['session_timeout']);
+// Register a singleton class (same instance every time)
+$container->setSingletonClass(Logger::class, Logger::class);
+$container->get(Logger::class);  // => new Logger()
+$container->get(Logger::class);  // => same Logger instance
+
+// Register a factory with auto-resolved arguments
+// By default, arguments are resolved by type (TypeBasedArgumentsResolver)
+$container->setFactory('pdo', function(Logger $logger) {
+    $logger->info('Creating PDO connection');
+    return new PDO('mysql:host=localhost;dbname=app');
 });
-$container->setSingletonFactory('database', function($config) {
-    return new Database($config['db']);
+$container->get('pdo');  // => Logger is auto-injected, returns new PDO()
+
+// Register a singleton factory
+$container->setSingletonFactory('database', function(PDO $pdo, Logger $logger) {
+    return new Database($pdo, $logger);
 });
+$container->get('database');  // => new Database() with PDO and Logger injected
+$container->get('database');  // => same Database instance
 
-// Create alias
-$container->setAlias('repos.user', 'userRepository');
+// Create an alias
+$container->setAlias('db', 'database');
+$container->get('db');  // => same as $container->get('database')
 
-// Retrieve entries
-$logger = $container->get('logger');
-$userRepo = $container->get('userRepository');
-$userService = $container->get(App\Domain\UserService::class);
+// Auto-resolve classes from registered namespaces
+$container->addNamespace('App\\Domain');
+$container->get(App\Domain\UserService::class);  // => auto-instantiated with dependencies
 ```
 
-### StaticContainer
+## Features
 
-For explicitly registered entries:
+- PSR-11 compatible (`Psr\Container\ContainerInterface`)
+- Type-based or name-based autowiring
+- Singleton support for classes and factories
+- Namespace-based auto-resolution
+- Circular dependency detection
+
+## Arguments Resolution
+
+The container automatically resolves constructor and factory arguments.
+
+### Type-Based Resolution (Default)
+
+Resolves arguments by their type declarations:
+
+```php
+use Coroq\Container\OmniContainer;
+
+// TypeBasedArgumentsResolver is used by default
+$container = new OmniContainer();
+
+$container->setSingletonClass(Logger::class, Logger::class);
+$container->setSingletonClass(UserRepository::class, UserRepository::class);
+
+// UserService constructor: __construct(Logger $logger, UserRepository $repo)
+// Both arguments are resolved by their class types
+$container->setClass(UserService::class, UserService::class);
+```
+
+### Name-Based Resolution
+
+Resolves arguments by their parameter names. Useful for configuration-driven projects:
+
+```php
+use Coroq\Container\OmniContainer;
+use Coroq\Container\ArgumentsResolver\NameBasedArgumentsResolver;
+
+$container = new OmniContainer(new NameBasedArgumentsResolver());
+
+// Register entries - names must match parameter names exactly
+$container->setValue('dsn', 'mysql:host=localhost;dbname=app');
+$container->setValue('timeout', 30);
+$container->setValue('logger', new Logger());
+
+// Factory parameters $dsn, $timeout are resolved by name
+$container->setSingletonFactory('database', function($dsn, $timeout) {
+    return new Database($dsn, $timeout);
+});
+
+// Constructor parameter $logger is resolved by name
+// class UserService { public function __construct($logger) { ... } }
+$container->setClass('userService', UserService::class);
+```
+
+## Advanced: Building Custom Container Hierarchies
+
+For most use cases, `OmniContainer` is sufficient. This section is for users who need fine-grained control over container composition.
+
+### Container Types
+
+**StaticContainer** - For explicitly registered entries:
 
 ```php
 use Coroq\Container\StaticContainer;
 use Coroq\Container\ArgumentsResolver\TypeBasedArgumentsResolver;
 
-$resolver = new TypeBasedArgumentsResolver($container);
-$container = new StaticContainer($resolver);
+$container = new StaticContainer();
+$container->setArgumentsResolver(new TypeBasedArgumentsResolver());
 
-// Register entries
 $container->setValue('appName', 'My App');
-$container->setFactory('userService', function($userRepository) {
-    return new UserService($userRepository);
-});
-$container->setSingletonClass('mailer', Mailer::class);
-
-// Get entries
-$service = $container->get('userService');
+$container->setFactory('service', function() { return new Service(); });
 ```
 
-### DynamicContainer
-
-Automatically instantiates classes from registered namespaces:
+**DynamicContainer** - Auto-instantiates classes from registered namespaces:
 
 ```php
 use Coroq\Container\DynamicContainer;
+use Coroq\Container\ArgumentsResolver\TypeBasedArgumentsResolver;
 
 $container = new DynamicContainer();
+$container->setArgumentsResolver(new TypeBasedArgumentsResolver());
 $container->addNamespace('App\\Domain');
 
-// Auto-creates instances from registered namespaces
-$userService = $container->get(App\Domain\UserService::class);
+// Automatically creates App\Domain\UserService
+$service = $container->get(App\Domain\UserService::class);
 ```
 
-### CompositeContainer
-
-Delegates to multiple containers:
+**CompositeContainer** - Delegates to multiple containers in order:
 
 ```php
 use Coroq\Container\CompositeContainer;
 
-$container = new CompositeContainer();
-$container->addContainer($staticContainer);
-$container->addContainer($dynamicContainer);
+$composite = new CompositeContainer();
+$composite->addContainer($staticContainer);   // checked first
+$composite->addContainer($dynamicContainer);  // checked second
 
-// Searches containers in order until entry is found
-$service = $container->get('service');
+$service = $composite->get('service');  // searches in order
 ```
+
+### Cascading Containers
+
+When containers are nested, child containers may need to resolve dependencies registered in sibling or parent containers. The `setRootContainer()` method enables this:
+
+```php
+use Coroq\Container\StaticContainer;
+use Coroq\Container\DynamicContainer;
+use Coroq\Container\CompositeContainer;
+use Coroq\Container\ArgumentsResolver\TypeBasedArgumentsResolver;
+
+$resolver = new TypeBasedArgumentsResolver();
+
+// Static container holds explicitly registered entries
+$static = new StaticContainer();
+$static->setArgumentsResolver($resolver);
+$static->setSingletonClass(Logger::class, Logger::class);
+
+// Dynamic container auto-instantiates from namespace
+$dynamic = new DynamicContainer();
+$dynamic->setArgumentsResolver($resolver);
+$dynamic->addNamespace('App\\Domain');
+
+// Composite container combines both
+$root = new CompositeContainer();
+$root->addContainer($static);
+$root->addContainer($dynamic);
+
+// Enable cascading: child containers resolve dependencies via root
+$root->setRootContainer($root);
+
+// Now DynamicContainer can resolve Logger (registered in StaticContainer)
+// when instantiating App\Domain\UserService
+$service = $root->get(App\Domain\UserService::class);
+```
+
+`OmniContainer` handles cascading automatically.
 
 ## License
 

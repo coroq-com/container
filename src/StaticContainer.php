@@ -3,17 +3,17 @@ declare(strict_types=1);
 namespace Coroq\Container;
 
 use Coroq\Container\ArgumentsResolver\ArgumentsResolverInterface;
-use Coroq\Container\Entry\AliasEntry;
-use Coroq\Container\Entry\ClassEntry;
-use Coroq\Container\Entry\EntryInterface;
-use Coroq\Container\Entry\FactoryEntry;
-use Coroq\Container\Entry\SingletonEntry;
-use Coroq\Container\Entry\ValueEntry;
+use Coroq\Container\StaticContainer\AliasEntry;
+use Coroq\Container\StaticContainer\ClassEntry;
+use Coroq\Container\StaticContainer\EntryInterface;
+use Coroq\Container\StaticContainer\FactoryEntry;
+use Coroq\Container\StaticContainer\SingletonEntry;
+use Coroq\Container\StaticContainer\ValueEntry;
 use Coroq\Container\Exception\NotFoundException;
-use Psr\Container\ContainerInterface;
 
-class StaticContainer implements ContainerInterface {
+class StaticContainer implements CascadingContainerInterface {
   use CircularDependencyDetectionTrait;
+  use CascadingContainerTrait;
 
   private array $entries;
   private ?ArgumentsResolverInterface $argumentsResolver = null;
@@ -53,7 +53,7 @@ class StaticContainer implements ContainerInterface {
       $this->detectRecursion($id);
       $entry = $this->entries[$id];
       if ($entry instanceof EntryInterface) {
-        $entry = $entry->getValue($this);
+        $entry = $entry->getValue($this->getRootContainer(), $this->getArgumentsResolver());
       }
       return $entry;
     }
@@ -85,24 +85,24 @@ class StaticContainer implements ContainerInterface {
    *
    * @return void
    */
-   public function set(string $id, $entry): void {
+  public function set(string $id, $entry): void {
     $this->entries[$id] = $entry;
   }
 
   public function setFactory(string $id, callable $factory): void {
-    $this->set($id, new FactoryEntry($this->getArgumentsResolver(), $factory));
+    $this->set($id, new FactoryEntry($factory));
   }
 
   public function setSingletonFactory(string $id, callable $factory): void {
-    $this->set($id, new SingletonEntry(new FactoryEntry($this->getArgumentsResolver(), $factory)));
+    $this->set($id, new SingletonEntry(new FactoryEntry($factory)));
   }
 
   public function setClass(string $id, string $className): void {
-    $this->set($id, new ClassEntry($this->getArgumentsResolver(), $className));
+    $this->set($id, new ClassEntry($className));
   }
 
   public function setSingletonClass(string $id, string $className): void {
-    $this->set($id, new SingletonEntry(new ClassEntry($this->getArgumentsResolver(), $className)));
+    $this->set($id, new SingletonEntry(new ClassEntry($className)));
   }
 
   public function setValue(string $id, $value): void {

@@ -6,6 +6,7 @@ use Coroq\Container\ArgumentsResolver\TypeBasedArgumentsResolver;
 use Coroq\Container\Exception\AutowiringException;
 use Coroq\Container\Exception\NotFoundException;
 use Psr\Container\NotFoundExceptionInterface;
+use Coroq\CallableReflector\CallableReflector;
 
 /**
  * @covers Coroq\Container\ArgumentsResolver\TypeBasedArgumentsResolver
@@ -17,13 +18,14 @@ class TypeBasedArgumentsResolverTest extends TestCase {
   protected function setUp(): void {
     $this->mockContainer = $this->createMock(ContainerInterface::class);
     $this->resolver = new TypeBasedArgumentsResolver();
-    $this->resolver->setContainer($this->mockContainer);
   }
 
   public function testResolveArgumentsOfClassWithoutConstructor(): void {
-    $arguments = $this->resolver->resolveConstructorArguments(SampleService::class);
+    $class = new ReflectionClass(SampleService::class);
+    $constructor = $class->getConstructor();
 
-    $this->assertSame([], $arguments);
+    // No constructor, so we don't call resolve
+    $this->assertNull($constructor);
   }
 
   public function testResolveArgumentsOfConstructor(): void {
@@ -33,7 +35,9 @@ class TypeBasedArgumentsResolverTest extends TestCase {
       ->with(SampleService::class)
       ->willReturn(new SampleService());
 
-    $arguments = $this->resolver->resolveConstructorArguments(SampleController::class);
+    $class = new ReflectionClass(SampleController::class);
+    $constructor = $class->getConstructor();
+    $arguments = $this->resolver->resolve($constructor, $this->mockContainer);
 
     $this->assertCount(1, $arguments);
     $this->assertInstanceOf(SampleService::class, $arguments[0]);
@@ -46,7 +50,9 @@ class TypeBasedArgumentsResolverTest extends TestCase {
       ->with(SampleService::class)
       ->willReturn(new SampleService());
 
-    $arguments = $this->resolver->resolveCallableArguments(function (SampleService $service) {});
+    $callable = function (SampleService $service) {};
+    $reflection = CallableReflector::createFromCallable($callable);
+    $arguments = $this->resolver->resolve($reflection, $this->mockContainer);
 
     $this->assertCount(1, $arguments);
     $this->assertInstanceOf(SampleService::class, $arguments[0]);
@@ -56,13 +62,17 @@ class TypeBasedArgumentsResolverTest extends TestCase {
     $this->expectException(AutowiringException::class);
     $this->expectExceptionMessage('lacks a type declaration');
 
-    $this->resolver->resolveCallableArguments(function ($service) {});
+    $callable = function ($service) {};
+    $reflection = CallableReflector::createFromCallable($callable);
+    $this->resolver->resolve($reflection, $this->mockContainer);
   }
 
   public function testThrowsExceptionForBuiltInType(): void {
     $this->expectException(AutowiringException::class);
     $this->expectExceptionMessage('built-in type');
-    $this->resolver->resolveCallableArguments([SampleController::class, 'staticMethod']);
+
+    $reflection = new \ReflectionMethod(SampleController::class, 'staticMethod');
+    $this->resolver->resolve($reflection, $this->mockContainer);
   }
 
   /**
@@ -71,14 +81,18 @@ class TypeBasedArgumentsResolverTest extends TestCase {
   public function testThrowsExceptionForComplexType(): void {
     $this->expectException(AutowiringException::class);
     $this->expectExceptionMessage('complex type declaration');
+
     eval('$closure = function(int|stdClass $arg) {};');
-    $this->resolver->resolveCallableArguments($closure);
+    $reflection = CallableReflector::createFromCallable($closure);
+    $this->resolver->resolve($reflection, $this->mockContainer);
   }
 
   public function testExceptionForMethod(): void {
     $this->expectException(AutowiringException::class);
     $this->expectExceptionMessage('$number in SampleController::staticMethod is of a built-in type');
-    $this->resolver->resolveCallableArguments([SampleController::class, 'staticMethod']);
+
+    $reflection = new \ReflectionMethod(SampleController::class, 'staticMethod');
+    $this->resolver->resolve($reflection, $this->mockContainer);
   }
 
   public function testThrowsNotFoundExceptionIfTheTypeNotFoundInContainer(): void {
@@ -90,23 +104,18 @@ class TypeBasedArgumentsResolverTest extends TestCase {
 
     $this->expectException(NotFoundExceptionInterface::class);
 
-    $this->resolver->resolveConstructorArguments(SampleController::class);
+    $class = new ReflectionClass(SampleController::class);
+    $constructor = $class->getConstructor();
+    $this->resolver->resolve($constructor, $this->mockContainer);
   }
 
   public function testUsesDefaultValueIfAvailable(): void {
-    $arguments = $this->resolver->resolveCallableArguments(function ($service = 'default value') {});
+    $callable = function ($service = 'default value') {};
+    $reflection = CallableReflector::createFromCallable($callable);
+    $arguments = $this->resolver->resolve($reflection, $this->mockContainer);
 
     $this->assertCount(1, $arguments);
     $this->assertSame('default value', $arguments[0]);
-  }
-
-  public function testThrowsLogicExceptionIfContainerNotSet(): void {
-    $resolver = new TypeBasedArgumentsResolver();
-
-    $this->expectException(\LogicException::class);
-    $this->expectExceptionMessage('Container is not set');
-
-    $resolver->resolveCallableArguments(function (SampleService $service) {});
   }
 }
 

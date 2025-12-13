@@ -2,43 +2,46 @@
 declare(strict_types=1);
 
 use Coroq\Container\ArgumentsResolver\ArgumentsResolverInterface;
-use Coroq\Container\Entry\FactoryEntry;
+use Coroq\Container\StaticContainer\FactoryEntry;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
+use Coroq\CallableReflector\CallableReflector;
 
 /**
- * @covers Coroq\Container\Entry\FactoryEntry
+ * @covers Coroq\Container\StaticContainer\FactoryEntry
  */
 class FactoryEntryTest extends TestCase {
   public function testGetValueCallsGivenCallable() {
     $containerMock = $this->createMock(ContainerInterface::class);
     $argumentsResolverMock = $this->createMock(ArgumentsResolverInterface::class);
-    $factory = new FactoryEntry($argumentsResolverMock, function() {
+    $argumentsResolverMock->method('resolve')->willReturn([]);
+    $factory = new FactoryEntry(function() {
       return 'ok';
     });
-    $this->assertSame('ok', $factory->getValue($containerMock));
+    $this->assertSame('ok', $factory->getValue($containerMock, $argumentsResolverMock));
   }
 
   public function testGetValueCallsGivenCallableEverytime() {
     $containerMock = $this->createMock(ContainerInterface::class);
     $argumentsResolverMock = $this->createMock(ArgumentsResolverInterface::class);
+    $argumentsResolverMock->method('resolve')->willReturn([]);
     $callCount = 0;
-    $singleton = new FactoryEntry($argumentsResolverMock, function() use (&$callCount) {
+    $factory = new FactoryEntry(function() use (&$callCount) {
       ++$callCount;
       return 'ok';
     });
-    $singleton->getValue($containerMock);
-    $singleton->getValue($containerMock);
+    $factory->getValue($containerMock, $argumentsResolverMock);
+    $factory->getValue($containerMock, $argumentsResolverMock);
     $this->assertSame(2, $callCount);
   }
 
   public function testArugmentsResolved() {
     $containerMock = $this->createMock(ContainerInterface::class);
     $argumentsResolverMock = $this->createMock(ArgumentsResolverInterface::class);
-    $argumentsResolverMock->method('resolveCallableArguments')->willReturn([1, 2]);
-    $factory = new FactoryEntry($argumentsResolverMock, function($a, $b) {
+    $argumentsResolverMock->method('resolve')->willReturn([1, 2]);
+    $factory = new FactoryEntry(function($a, $b) {
       return [$a, $b];
     });
-    $this->assertSame([1, 2], $factory->getValue($containerMock));
+    $this->assertSame([1, 2], $factory->getValue($containerMock, $argumentsResolverMock));
   }
 }
