@@ -49,8 +49,15 @@ $container->setAlias('db', 'database');
 $container->get('db');  // => same as $container->get('database')
 
 // Auto-resolve classes from registered namespaces
+// Note: Auto-resolved classes are cached (singleton behavior)
 $container->addNamespace('App\\Domain');
 $container->get(App\Domain\UserService::class);  // => auto-instantiated with dependencies
+$container->get(App\Domain\UserService::class);  // => same instance (cached)
+
+// Override auto-resolution behavior with explicit registration
+$container->setClass(App\Domain\UserService::class, App\Domain\UserService::class);  // new instance each time
+// or
+$container->setSingletonClass(App\Domain\UserService::class, App\Domain\UserService::class);  // explicit singleton
 ```
 
 ## Features
@@ -138,6 +145,7 @@ $container->setArgumentsResolver(new TypeBasedArgumentsResolver());
 $container->addNamespace('App\\Domain');
 
 // Automatically creates App\Domain\UserService
+// Instances are cached, behaving as singletons
 $service = $container->get(App\Domain\UserService::class);
 ```
 
