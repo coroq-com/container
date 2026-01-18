@@ -117,6 +117,29 @@ class TypeBasedArgumentsResolverTest extends TestCase {
     $this->assertCount(1, $arguments);
     $this->assertSame('default value', $arguments[0]);
   }
+
+  public function testThrowsExceptionForVariadicParameter(): void {
+    $this->expectException(AutowiringException::class);
+    $this->expectExceptionMessage('Variadic parameter $handlers is not supported');
+
+    $callable = function (SampleService ...$handlers) {};
+    $reflection = CallableReflector::createFromCallable($callable);
+    $this->resolver->resolve($reflection, $this->mockContainer);
+  }
+
+  public function testThrowsExceptionForVariadicParameterAfterRegularParameters(): void {
+    $this->mockContainer
+      ->method('get')
+      ->with(SampleService::class)
+      ->willReturn(new SampleService());
+
+    $this->expectException(AutowiringException::class);
+    $this->expectExceptionMessage('Variadic parameter $handlers is not supported');
+
+    $callable = function (SampleService $service, SampleService ...$handlers) {};
+    $reflection = CallableReflector::createFromCallable($callable);
+    $this->resolver->resolve($reflection, $this->mockContainer);
+  }
 }
 
 // Sample classes for testing

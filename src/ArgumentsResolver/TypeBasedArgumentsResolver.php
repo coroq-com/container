@@ -18,6 +18,12 @@ class TypeBasedArgumentsResolver implements ArgumentsResolverInterface {
   public function resolve(ReflectionFunctionAbstract $reflection, ContainerInterface $container): array {
     $arguments = [];
     foreach ($reflection->getParameters() as $parameter) {
+      if ($parameter->isVariadic()) {
+        throw new AutowiringException(sprintf(
+          'Variadic parameter $%s is not supported for autowiring.',
+          $parameter->getName()
+        ));
+      }
       $arguments[] = $this->resolveArgument($reflection, $parameter, $container);
     }
     return $arguments;
