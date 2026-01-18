@@ -6,7 +6,7 @@ use Coroq\Container\ArgumentsResolver\ArgumentsResolverInterface;
 use Coroq\Container\ArgumentsResolver\TypeBasedArgumentsResolver;
 use Psr\Container\ContainerInterface;
 
-class OmniContainer implements ContainerInterface {
+class OmniContainer implements CascadingContainerInterface {
   use CircularDependencyDetectionTrait;
 
   private CompositeContainer $compositeContainer;
@@ -34,6 +34,10 @@ class OmniContainer implements ContainerInterface {
     $this->argumentsResolver = $argumentsResolver;
     $this->staticContainer->setArgumentsResolver($argumentsResolver);
     $this->dynamicContainer->setArgumentsResolver($argumentsResolver);
+  }
+
+  public function setRootContainer(ContainerInterface $rootContainer): void {
+    $this->compositeContainer->setRootContainer($rootContainer);
   }
 
   public function addNamespace(string $namespace): void {

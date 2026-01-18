@@ -156,15 +156,39 @@ class OmniContainerTest extends TestCase {
   public function testValidAliasChains(): void
   {
     $container = new OmniContainer();
-    
+
     // Set up some valid services and aliases
     $container->setValue('actual_service', 'service value');
     $container->setAlias('service_alias', 'actual_service');
     $container->setAlias('alias_to_alias', 'service_alias');
-    
+
     // These should all resolve to the original value
     $this->assertEquals('service value', $container->get('actual_service'));
     $this->assertEquals('service value', $container->get('service_alias'));
     $this->assertEquals('service value', $container->get('alias_to_alias'));
+  }
+
+  /**
+   * Test that setRootContainer propagates to internal containers
+   */
+  public function testSetRootContainerPropagatesToChildren(): void
+  {
+    $container = new OmniContainer();
+
+    // Create a mock root container that will provide a dependency
+    $rootContainer = $this->createMock(\Psr\Container\ContainerInterface::class);
+    $rootContainer->method('has')->willReturn(true);
+    $rootContainer->method('get')->with(SampleClass::class)->willReturn(new SampleClass());
+
+    $container->setRootContainer($rootContainer);
+
+    // Register a factory that depends on SampleClass
+    $container->setFactory('service', function (SampleClass $sample) {
+      return $sample;
+    });
+
+    // The factory should resolve SampleClass from the root container
+    $result = $container->get('service');
+    $this->assertInstanceOf(SampleClass::class, $result);
   }
 }
