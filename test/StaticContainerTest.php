@@ -102,4 +102,20 @@ class StaticContainerTest extends TestCase {
     // Exception is thrown when getting, not when setting
     $container->get('service');
   }
+
+  public function testSetAndGetRawValue(): void {
+    $this->container->set('raw', 'raw value');
+
+    $this->assertTrue($this->container->has('raw'));
+    $this->assertSame('raw value', $this->container->get('raw'));
+  }
+
+  public function testSetAndGetRawObject(): void {
+    $obj = new stdClass();
+    $obj->name = 'test';
+    $this->container->set('obj', $obj);
+
+    $this->assertTrue($this->container->has('obj'));
+    $this->assertSame($obj, $this->container->get('obj'));
+  }
 }

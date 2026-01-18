@@ -74,13 +74,16 @@ class StaticContainer implements CascadingContainerInterface {
    * @return bool
    */
   public function has(string $id): bool {
-    $entry = $this->entries[$id] ?? null;
-    if ($entry === null) {
+    if (!array_key_exists($id, $this->entries)) {
       return false;
     }
     try {
       $this->detectRecursion($id);
-      return $entry->has($this->getRootContainer(), $this->getArgumentsResolver());
+      $entry = $this->entries[$id];
+      if ($entry instanceof EntryInterface) {
+        return $entry->has($this->getRootContainer(), $this->getArgumentsResolver());
+      }
+      return true;
     }
     finally {
       $this->clearRecursionGuard($id);
