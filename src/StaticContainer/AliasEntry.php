@@ -12,6 +12,10 @@ class AliasEntry implements EntryInterface {
     $this->targetId = $targetId;
   }
 
+  public function has(ContainerInterface $container, ArgumentsResolverInterface $argumentsResolver): bool {
+    return $container->has($this->targetId);
+  }
+
   public function getValue(ContainerInterface $container, ArgumentsResolverInterface $argumentsResolver) {
     return $container->get($this->targetId);
   }

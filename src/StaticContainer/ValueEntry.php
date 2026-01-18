@@ -15,6 +15,10 @@ class ValueEntry implements EntryInterface {
     $this->value = $value;
   }
 
+  public function has(ContainerInterface $container, ArgumentsResolverInterface $argumentsResolver): bool {
+    return true;
+  }
+
   public function getValue(ContainerInterface $container, ArgumentsResolverInterface $argumentsResolver) {
     return $this->value;
   }

@@ -7,16 +7,12 @@ use Coroq\Container\ArgumentsResolver\TypeBasedArgumentsResolver;
 use Psr\Container\ContainerInterface;
 
 class OmniContainer implements CascadingContainerInterface {
-  use CircularDependencyDetectionTrait;
-
   private CompositeContainer $compositeContainer;
   private StaticContainer $staticContainer;
   private DynamicContainer $dynamicContainer;
   private ArgumentsResolverInterface $argumentsResolver;
-  private array $aliases;
 
   public function __construct(?ArgumentsResolverInterface $argumentsResolver = null) {
-    $this->aliases = [];
     $this->argumentsResolver = $argumentsResolver ?? new TypeBasedArgumentsResolver();
 
     $this->staticContainer = new StaticContainer($this->argumentsResolver);
@@ -65,32 +61,14 @@ class OmniContainer implements CascadingContainerInterface {
   }
 
   public function setAlias(string $id, string $targetId): void {
-    $this->aliases[$id] = $targetId;
+    $this->staticContainer->setAlias($id, $targetId);
   }
 
   public function get(string $id) {
-    if (isset($this->aliases[$id])) {
-      try {
-        $this->detectRecursion($id);
-        return $this->get($this->aliases[$id]);
-      }
-      finally {
-        $this->clearRecursionGuard($id);
-      }
-    }
     return $this->compositeContainer->get($id);
   }
 
   public function has(string $id): bool {
-    if (isset($this->aliases[$id])) {
-      try {
-        $this->detectRecursion($id);
-        return $this->has($this->aliases[$id]);
-      }
-      finally {
-        $this->clearRecursionGuard($id);
-      }
-    }
     return $this->compositeContainer->has($id);
   }
 }

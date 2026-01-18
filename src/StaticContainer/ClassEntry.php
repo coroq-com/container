@@ -13,6 +13,10 @@ class ClassEntry implements EntryInterface {
     $this->className = $className;
   }
 
+  public function has(ContainerInterface $container, ArgumentsResolverInterface $argumentsResolver): bool {
+    return true;
+  }
+
   public function getValue(ContainerInterface $container, ArgumentsResolverInterface $argumentsResolver) {
     $class = new ReflectionClass($this->className);
     $constructor = $class->getConstructor();

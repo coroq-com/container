@@ -15,6 +15,10 @@ class SingletonEntry implements EntryInterface {
     $this->cached = false;
   }
 
+  public function has(ContainerInterface $container, ArgumentsResolverInterface $argumentsResolver): bool {
+    return $this->entry->has($container, $argumentsResolver);
+  }
+
   public function getValue(ContainerInterface $container, ArgumentsResolverInterface $argumentsResolver) {
     if (!$this->cached) {
       $this->cache = $this->entry->getValue($container, $argumentsResolver);

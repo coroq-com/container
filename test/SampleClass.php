@@ -17,6 +17,16 @@ namespace Coroq\Test {
     public function __construct(self $recursiveClass) {
     }
   }
+
+  class CircularA {
+    public function __construct(CircularB $b) {
+    }
+  }
+
+  class CircularB {
+    public function __construct(CircularA $a) {
+    }
+  }
 }
 
 namespace Coroq\Test2 {

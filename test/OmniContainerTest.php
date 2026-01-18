@@ -6,6 +6,7 @@ use Coroq\Container\OmniContainer;
 use Coroq\Container\Exception\NotFoundException;
 use Coroq\Container\Exception\CircularDependencyException;
 use Coroq\Test\SampleClass;
+use Coroq\Test\CircularA;
 
 require_once __DIR__ . '/SampleClass.php';
 
@@ -190,5 +191,92 @@ class OmniContainerTest extends TestCase {
     // The factory should resolve SampleClass from the root container
     $result = $container->get('service');
     $this->assertInstanceOf(SampleClass::class, $result);
+  }
+
+  /**
+   * Test alias to DynamicContainer entry
+   */
+  public function testAliasResolvesToDynamicContainerEntry(): void
+  {
+    $container = new OmniContainer();
+    $container->addNamespace('Coroq\\Test');
+    $container->setAlias('sample', SampleClass::class);
+
+    $result = $container->get('sample');
+    $this->assertInstanceOf(SampleClass::class, $result);
+  }
+
+  /**
+   * Test has() returns true for alias to existing entry
+   */
+  public function testHasReturnsTrueForAliasToExistingEntry(): void
+  {
+    $container = new OmniContainer();
+    $container->setValue('actual', 'value');
+    $container->setAlias('alias', 'actual');
+
+    $this->assertTrue($container->has('alias'));
+  }
+
+  /**
+   * Test has() returns false for alias to non-existent entry
+   */
+  public function testHasReturnsFalseForAliasToNonExistentEntry(): void
+  {
+    $container = new OmniContainer();
+    $container->setAlias('alias', 'non_existent');
+
+    $this->assertFalse($container->has('alias'));
+  }
+
+  /**
+   * Test has() detects self-referential alias
+   */
+  public function testHasDetectsSelfReferentialAlias(): void
+  {
+    $container = new OmniContainer();
+    $container->setAlias('self', 'self');
+
+    $this->expectException(CircularDependencyException::class);
+    $container->has('self');
+  }
+
+  /**
+   * Test has() detects circular alias chain
+   */
+  public function testHasDetectsCircularAliasChain(): void
+  {
+    $container = new OmniContainer();
+    $container->setAlias('a', 'b');
+    $container->setAlias('b', 'c');
+    $container->setAlias('c', 'a');
+
+    $this->expectException(CircularDependencyException::class);
+    $container->has('a');
+  }
+
+  /**
+   * Test circular dependency via class constructor
+   */
+  public function testCircularDependencyViaClassConstructor(): void
+  {
+    $container = new OmniContainer();
+    $container->addNamespace('Coroq\\Test');
+
+    $this->expectException(CircularDependencyException::class);
+    $container->get(CircularA::class);
+  }
+
+  /**
+   * Test two-way circular alias
+   */
+  public function testTwoWayCircularAlias(): void
+  {
+    $container = new OmniContainer();
+    $container->setAlias('ping', 'pong');
+    $container->setAlias('pong', 'ping');
+
+    $this->expectException(CircularDependencyException::class);
+    $container->get('ping');
   }
 }

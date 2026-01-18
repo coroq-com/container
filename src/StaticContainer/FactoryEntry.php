@@ -13,6 +13,10 @@ class FactoryEntry implements EntryInterface {
     $this->factory = $factory;
   }
 
+  public function has(ContainerInterface $container, ArgumentsResolverInterface $argumentsResolver): bool {
+    return true;
+  }
+
   public function getValue(ContainerInterface $container, ArgumentsResolverInterface $argumentsResolver) {
     $reflection = CallableReflector::createFromCallable($this->factory);
     $arguments = $argumentsResolver->resolve($reflection, $container);
