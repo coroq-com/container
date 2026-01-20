@@ -7,6 +7,15 @@
         "coroq/callable-reflector": "^1.0"
     },
     "license": "MIT",
+    "keywords": [
+        "dependency injection",
+        "container",
+        "di",
+        "psr-11",
+        "autowiring",
+        "service container",
+        "lightweight"
+    ],
     "autoload": {
         "psr-4": {
             "Coroq\\Container\\": "src/"
