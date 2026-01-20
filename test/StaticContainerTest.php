@@ -118,4 +118,40 @@ class StaticContainerTest extends TestCase {
     $this->assertTrue($this->container->has('obj'));
     $this->assertSame($obj, $this->container->get('obj'));
   }
+
+  public function testSetClassWithNonExistentClassThrowsInstantiationException(): void {
+    $this->container->setClass('service', 'NonExistentClass');
+
+    $this->assertTrue($this->container->has('service'));
+
+    $this->expectException(\Coroq\Container\Exception\InstantiationException::class);
+    $this->expectExceptionMessage("Cannot instantiate: class 'NonExistentClass' does not exist");
+    $this->container->get('service');
+  }
+
+  public function testSetClassWithInterfaceThrowsInstantiationException(): void {
+    $this->container->setClass('service', TestInterface::class);
+
+    $this->assertTrue($this->container->has('service'));
+
+    $this->expectException(\Coroq\Container\Exception\InstantiationException::class);
+    $this->expectExceptionMessage("is not instantiable");
+    $this->container->get('service');
+  }
+
+  public function testSetClassWithAbstractClassThrowsInstantiationException(): void {
+    $this->container->setClass('service', AbstractTestClass::class);
+
+    $this->assertTrue($this->container->has('service'));
+
+    $this->expectException(\Coroq\Container\Exception\InstantiationException::class);
+    $this->expectExceptionMessage("is not instantiable");
+    $this->container->get('service');
+  }
+}
+
+interface TestInterface {
+}
+
+abstract class AbstractTestClass {
 }
